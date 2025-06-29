@@ -17,24 +17,24 @@ import java.util.Map;
 @Component
 public class Reader {
 
-    @Value("${s3_location}")
-    private String s3_location;
+//    @Value("${s3_location}")
+//    private String s3_location;
 
-    private final static String url_duckdb_memory = "jdbc:duckdb:";
-    private String SELECT;
-    private final static String CREATE_SECRET = "CREATE OR REPLACE SECRET secret (TYPE s3,  PROVIDER credential_chain)";
-    private final static String CREATE_PERSISTENT_SECRET = "CREATE OR REPLACE persistent SECRET secret (TYPE s3,  PROVIDER credential_chain)";
+    public final static String url_duckdb_memory = "jdbc:duckdb:";
+//    private String SELECT;
+//    private final static String CREATE_SECRET = "CREATE OR REPLACE SECRET secret (TYPE s3,  PROVIDER credential_chain)";
+//    private final static String CREATE_PERSISTENT_SECRET = "CREATE OR REPLACE persistent SECRET secret (TYPE s3,  PROVIDER credential_chain)";
 
     private static final Logger logger = LoggerFactory.getLogger(Reader.class);
 
-    @PostConstruct
-    public void init() {
-
-        logger.info("s3_location = {}", s3_location);
-        SELECT = "SELECT * FROM " + s3_location + " limit 2";
-
-        testAllCombinations();
-    }
+//    @PostConstruct
+//    public void init() {
+//
+//        logger.info("s3_location = {}", s3_location);
+//        SELECT = "SELECT * FROM " + s3_location + " limit 2";
+//
+//        //testAllCombinations();
+//    }
 
 
     public enum SecretType {
@@ -47,28 +47,28 @@ public class Reader {
         logger.info("DuckDB version = {}", version);
     }
 
-    public void testAllCombinations() {
-
-        logVersion();
-
-        // SecretType.values()
-        for (SecretType secretType : List.of(SecretType.NONE, SecretType.PERSISTENT, SecretType.NORMAL, SecretType.PERSISTENT)) {
-            logger.info("==== secretType = {} =====", secretType);
-            {
-                boolean ok = withRawJdbc(secretType);
-                logger.info("Access: RAW JDBC | Secret: {} OK: {}", secretType, ok);
-            }
-            {
-                boolean ok = withSingleConnectionDataSource(secretType);
-                logger.info("Access: SingleConnection | Secret: {} OK: {}", secretType, ok);
-            }
-            {
-                boolean ok = withDuckDataSource(secretType);
-                logger.info("Access: DuckDataSource | Secret: {} OK: {}", secretType, ok);
-            }
-            logger.info("==================", secretType);
-        }
-    }
+//    public void testAllCombinations() {
+//
+//        logVersion();
+//
+//        // SecretType.values()
+//        for (SecretType secretType : List.of(SecretType.NONE, SecretType.NORMAL)) {
+//            logger.info("==== secretType = {} =====", secretType);
+//            {
+//                boolean ok = withRawJdbc(secretType);
+//                logger.info("Access: RAW JDBC | Secret: {} OK: {}", secretType, ok);
+//            }
+//            {
+//                boolean ok = withSingleConnectionDataSource(secretType);
+//                logger.info("Access: SingleConnection | Secret: {} OK: {}", secretType, ok);
+//            }
+//            {
+//                boolean ok = withDuckDataSource(secretType);
+//                logger.info("Access: DuckDataSource | Secret: {} OK: {}", secretType, ok);
+//            }
+//            logger.info("==================", secretType);
+//        }
+//    }
 
     private void dropSecret(Connection conn) {
         try {
@@ -99,35 +99,35 @@ public class Reader {
     }
 
 
-    private boolean withRawJdbc(SecretType secretType) {
-        try {
-            Connection conn = DriverManager.getConnection(url_duckdb_memory);
-            dropSecret(conn);
-            Statement stmt = conn.createStatement();
-
-            if (secretType == SecretType.NORMAL) {
-                stmt.execute(CREATE_SECRET);
-            }
-            if (secretType == SecretType.PERSISTENT) {
-                stmt.execute(CREATE_PERSISTENT_SECRET);
-            }
-
-            try (ResultSet rs = stmt.executeQuery(SELECT)) {
-                while (rs.next()) {
-                    String columnName = rs.getMetaData().getColumnClassName(1);
-                    String value = rs.getString(1);
-                    //System.out.printf("%s => '%s' %n", columnName, value);
-                    logger.info("columnName={} value='{}'", columnName, value);
-                }
-            }
-            stmt.close();
-            return true;
-
-        } catch (Exception e) {
-            logger.error("Raw JDBC, secret:{} error:{}", secretType, e.getMessage());
-            return false;
-        }
-    }
+//    private boolean withRawJdbc(SecretType secretType) {
+//        try {
+//            Connection conn = DriverManager.getConnection(url_duckdb_memory);
+//            dropSecret(conn);
+//            Statement stmt = conn.createStatement();
+//
+//            if (secretType == SecretType.NORMAL) {
+//                stmt.execute(CREATE_SECRET);
+//            }
+//            if (secretType == SecretType.PERSISTENT) {
+//                stmt.execute(CREATE_PERSISTENT_SECRET);
+//            }
+//
+//            try (ResultSet rs = stmt.executeQuery(SELECT)) {
+//                while (rs.next()) {
+//                    String columnName = rs.getMetaData().getColumnClassName(1);
+//                    String value = rs.getString(1);
+//                    //System.out.printf("%s => '%s' %n", columnName, value);
+//                    logger.info("columnName={} value='{}'", columnName, value);
+//                }
+//            }
+//            stmt.close();
+//            return true;
+//
+//        } catch (Exception e) {
+//            logger.error("Raw JDBC, secret:{} error:{}", secretType, e.getMessage());
+//            return false;
+//        }
+//    }
 
     public void dropSecret(JdbcClient jdbcClient, String name) {
         try {
@@ -139,34 +139,34 @@ public class Reader {
         }
     }
 
-    public void createSecret(JdbcClient jdbcClient, SecretType secretType) {
-        String stmt = "";
-        if (secretType == SecretType.NONE) {
-            return;
-        }
-        if (secretType == SecretType.NORMAL) {
-            stmt = CREATE_SECRET;
-        }
-        if (secretType == SecretType.PERSISTENT) {
-            stmt = CREATE_PERSISTENT_SECRET;
-        }
-        logger.info("stmt: {}", stmt);
-        Object secretCreated = jdbcClient.sql(stmt).query().singleColumn();
-        logger.info("secretCreated = {}", secretCreated);
+//    public void createSecret(JdbcClient jdbcClient, SecretType secretType) {
+//        String stmt = "";
+//        if (secretType == SecretType.NONE) {
+//            return;
+//        }
+//        if (secretType == SecretType.NORMAL) {
+//            stmt = CREATE_SECRET;
+//        }
+//        if (secretType == SecretType.PERSISTENT) {
+//            stmt = CREATE_PERSISTENT_SECRET;
+//        }
+//        logger.info("stmt: {}", stmt);
+//        Object secretCreated = jdbcClient.sql(stmt).query().singleColumn();
+//        logger.info("secretCreated = {}", secretCreated);
+//
+//    }
 
-    }
-
-    public boolean withSingleConnectionDataSource(SecretType secretType) {
-        logger.info("==== withSingleConnectionDataSource ====");
-        SingleConnectionDataSource ds = new SingleConnectionDataSource(url_duckdb_memory, false);
-        return readRows(secretType, ds);
-    }
-
-    public boolean withDuckDataSource(SecretType secretType) {
-        logger.info("==== withDuckDataSource ====");
-        DataSource dataSource = DuckDataSource.memory();
-        return readRows(secretType, dataSource);
-    }
+//    public boolean withSingleConnectionDataSource(SecretType secretType) {
+//        logger.info("==== withSingleConnectionDataSource ====");
+//        SingleConnectionDataSource ds = new SingleConnectionDataSource(url_duckdb_memory, false);
+//        return readRows(secretType, ds);
+//    }
+//
+//    public boolean withDuckDataSource(SecretType secretType) {
+//        logger.info("==== withDuckDataSource ====");
+//        DataSource dataSource = DuckDataSource.memory();
+//        return readRows(secretType, dataSource);
+//    }
 
     private void logSecrets(JdbcClient jdbcClient) {
         List<Map<String, Object>> rows = jdbcClient.sql("select * from duckdb_secrets()").query().listOfRows();
@@ -176,31 +176,31 @@ public class Reader {
         }
     }
 
-    private boolean readRows(SecretType secretType, DataSource dataSource) {
-        try {
-            JdbcClient jdbcClient = JdbcClient.create(dataSource);
-
-            JdbcClient jdbcClient_secret = JdbcClient.create(dataSource);
-
-            dropSecret(jdbcClient, "secret");
-
-            //logSecrets(jdbcClient);
-
-            createSecret(jdbcClient_secret, secretType);
-
-
-            List<Map<String, Object>> rows = jdbcClient.sql(SELECT).query().listOfRows();
-            logger.info("rows = {}", rows.size());
-            for (Map<String, Object> row : rows) {
-                logger.info("row = {}", row);
-            }
-            return true;
-        } catch (Exception e) {
-            logger.error("withSingleConnectionDataSource: secretType: {} => {}", secretType, e.getMessage());
-            //logger.error("failed", e);
-            return false;
-        }
-    }
+//    private boolean readRows(SecretType secretType, DataSource dataSource) {
+//        try {
+//            JdbcClient jdbcClient = JdbcClient.create(dataSource);
+//
+//            JdbcClient jdbcClient_secret = JdbcClient.create(dataSource);
+//
+//            dropSecret(jdbcClient, "secret");
+//
+//            //logSecrets(jdbcClient);
+//
+//            createSecret(jdbcClient_secret, secretType);
+//
+//
+//            List<Map<String, Object>> rows = jdbcClient.sql(SELECT).query().listOfRows();
+//            logger.info("rows = {}", rows.size());
+//            for (Map<String, Object> row : rows) {
+//                logger.info("row = {}", row);
+//            }
+//            return true;
+//        } catch (Exception e) {
+//            logger.error("readRows: secretType: {} => {}", secretType, e.getMessage());
+//            //logger.error("failed", e);
+//            return false;
+//        }
+//    }
 
 
 }

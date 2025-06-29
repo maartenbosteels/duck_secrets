@@ -20,12 +20,16 @@ public class DuckDataSource extends AbstractDriverBasedDataSource implements Aut
 
     private DuckDBConnection connection;
 
-    @SneakyThrows
+    //@SneakyThrows
     public void init() {
-        String url = getUrl();
-        logger.info("Creating connection with url = {}", url);
-        Objects.requireNonNull(url);
-        this.connection = (DuckDBConnection) DriverManager.getConnection(url);
+        try {
+            String url = getUrl();
+            logger.info("Creating connection with url = {}", url);
+            Objects.requireNonNull(url);
+            this.connection = (DuckDBConnection) DriverManager.getConnection(url);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public DuckDataSource(String url) {
