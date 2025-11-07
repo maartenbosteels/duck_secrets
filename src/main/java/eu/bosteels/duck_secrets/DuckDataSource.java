@@ -26,7 +26,9 @@ public class DuckDataSource extends AbstractDriverBasedDataSource implements Aut
             String url = getUrl();
             logger.info("Creating connection with url = {}", url);
             Objects.requireNonNull(url);
-            this.connection = (DuckDBConnection) DriverManager.getConnection(url);
+            Properties properties = new Properties();
+            properties.setProperty("allow_unredacted_secrets", "true");
+            this.connection = (DuckDBConnection) DriverManager.getConnection(url, properties);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

@@ -9,6 +9,7 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +57,41 @@ public class MyCommands {
     for (Map<String, Object> row : rows) {
       rowNr++;
       System.out.printf("Row %d : %s%n", rowNr, row);
+    }
+  }
+
+  @ShellMethod(key = "show_secrets_unredacted")
+  public void show_secrets_unredacted() throws SQLException {
+    String sql = "select *,  string_split(secret_string, ';') as secret from duckdb_secrets(redact=false) where type = 's3'";
+    System.out.println("sql = '" + sql + "'");
+    List<Map<String, Object>> rows = jdbcClient.sql(sql).query().listOfRows();
+    System.out.println("Number of secrets found: " + rows.size());
+    int rowNr = 0;
+    for (Map<String, Object> row : rows) {
+      rowNr++;
+      //System.out.printf("Secret %d : %s%n", rowNr, row);
+      String name = row.get("name").toString();
+      String type = row.get("type").toString();
+      String provider = row.get("provider").toString();
+      String persistent = row.get("persistent").toString();
+      org.duckdb.DuckDBArray secret = (org.duckdb.DuckDBArray) row.get("secret");
+      logger.info("secret.name = {}", name);
+      logger.info("  secret.type  = {}", type);
+      logger.info("  secret.class = {}", secret.getClass().getName());
+      logger.info("  secret = {}", secret);
+      logger.info("  secret = {}", secret.getResultSet().getMetaData());
+      logger.info("====================");
+    }
+  }
+
+  @ShellMethod(key = "show_secrets_unredacted")
+  public void printSecret(@ShellOption(defaultValue = "secret") String name) {
+    String sql = "select unnest(string_split(secret_string, ';')) as item from duckdb_secrets(redact=false) where type = 's3' and name = ?";
+    List<Map<String, Object>> rows = jdbcClient.sql(sql).param(name).query().listOfRows();
+    System.out.println("Number of items found: " + rows.size());
+    for (Map<String, Object> row : rows) {
+      String item = row.get("item").toString();
+      logger.info("item = {}", item);
     }
   }
 
